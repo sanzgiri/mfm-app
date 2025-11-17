@@ -19,12 +19,14 @@ export const handler = async (event, context) => {
     }
 
     console.log('Saving progress for userId:', userId);
+    console.log('Context site ID:', context.site?.id);
+    console.log('Context token exists:', !!context.token);
 
     // Pass context to getStore for authentication
     const store = getStore({
       name: 'meditation-progress',
-      siteID: context.site?.id,
-      token: context.token
+      siteID: process.env.SITE_ID || context.site?.id,
+      token: process.env.NETLIFY_TOKEN || context.token
     });
     await store.set(userId, JSON.stringify(progressData));
 
