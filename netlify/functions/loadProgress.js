@@ -20,11 +20,11 @@ export const handler = async (event, context) => {
 
     console.log('Loading progress for userId:', userId);
 
-    // For Functions, pass store name with explicit siteID/token fallback
+    // Use Netlify's built-in context variables
     const store = getStore({
       name: 'meditation-progress',
-      siteID: process.env.SITE_ID,
-      token: process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN
+      siteID: context.site?.id || process.env.NETLIFY_SITE_ID,
+      token: context.token || process.env.NETLIFY_BLOBS_TOKEN
     });
     const data = await store.get(userId, { type: 'text' });
 
