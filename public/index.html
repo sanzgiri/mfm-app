@@ -80,7 +80,12 @@
     <div class="button-group">
       <button class="btn-secondary" onclick="showCalendar()">← Back to Calendar</button>
       <button class="btn-primary" id="completeBtn" onclick="toggleDayComplete()">Mark Complete</button>
-      <button class="btn-danger" onclick="meditationApp.clearProgress()">Clear All Data</button>
+    </div>
+    
+    <div class="button-group" style="margin-top: 20px; justify-content: center;">
+      <button class="btn-secondary" onclick="meditationApp.exportProgress()">📥 Export Progress</button>
+      <button class="btn-secondary" onclick="meditationApp.importProgress()">📤 Import Progress</button>
+      <button class="btn-danger" onclick="meditationApp.clearProgress()">🗑️ Clear All Data</button>
     </div>
   </div>
 

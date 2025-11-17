@@ -1,5 +1,3 @@
-const { getStore } = require('@netlify/blobs');
-
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { 
@@ -18,8 +16,10 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Use Netlify Blobs for persistent storage
+    // Use Netlify Blobs - simpler approach
+    const { getStore } = await import('@netlify/blobs');
     const store = getStore('meditation-progress');
+    
     await store.delete(userId);
 
     return {
@@ -31,7 +31,11 @@ exports.handler = async (event, context) => {
     console.error('Clear error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.toString() })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        error: error.message,
+        message: 'Failed to clear progress'
+      })
     };
   }
 };

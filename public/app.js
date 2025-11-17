@@ -66,27 +66,29 @@ let progressData = {
 // Load progress from server
 async function loadProgress() {
   try {
-    console.log('Loading progress for userId:', userId);
+    console.log('Loading progress from server for userId:', userId);
     const response = await fetch(`/.netlify/functions/loadProgress?userId=${userId}`);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server response error:', response.status, errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Loaded data:', data);
+    console.log('Server data loaded:', data);
     
     if (data.progressData && Object.keys(data.progressData).length > 0) {
       progressData = data.progressData;
-      console.log('Progress data loaded:', progressData);
+      console.log('Progress data set:', progressData);
     } else {
-      console.log('No existing progress data found, starting fresh');
+      console.log('No existing progress data found');
     }
     
     updateUI();
   } catch (error) {
     console.error('Error loading progress:', error);
-    showNotification('Failed to load progress', 'error');
+    showNotification('Failed to load progress - check console', 'error');
   }
 }
 
@@ -94,7 +96,7 @@ async function loadProgress() {
 async function saveProgress() {
   try {
     progressData.lastAccessed = new Date().toISOString();
-    console.log('Saving progress for userId:', userId, 'Data:', progressData);
+    console.log('Saving progress to server for userId:', userId, 'Data:', progressData);
     
     const response = await fetch('/.netlify/functions/saveProgress', {
       method: 'POST',
@@ -103,15 +105,17 @@ async function saveProgress() {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server response error:', response.status, errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const result = await response.json();
-    console.log('Save result:', result);
+    console.log('Save successful:', result);
     showNotification('Progress saved ✓');
   } catch (error) {
     console.error('Error saving progress:', error);
-    showNotification('Save failed', 'error');
+    showNotification('Save failed - check console', 'error');
   }
 }
 
@@ -133,7 +137,50 @@ async function clearProgress() {
     showNotification('Progress cleared');
   } catch (error) {
     console.error('Error clearing progress:', error);
+    showNotification('Clear failed', 'error');
   }
+}
+
+// Export progress data as JSON file
+function exportProgress() {
+  const dataStr = JSON.stringify(progressData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `meditations-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showNotification('Progress exported');
+}
+
+// Import progress data from JSON file
+function importProgress() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      
+      if (confirm('This will overwrite your current progress. Continue?')) {
+        progressData = imported;
+        saveProgress();
+        updateUI();
+        showNotification('Progress imported');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      showNotification('Import failed', 'error');
+    }
+  };
+  input.click();
 }
 
 // Mark day as complete/incomplete
@@ -219,6 +266,8 @@ window.meditationApp = {
   loadProgress,
   saveProgress,
   clearProgress,
+  exportProgress,
+  importProgress,
   getUserId: () => userId,
   progressData  // Export progressData so it can be accessed
 };

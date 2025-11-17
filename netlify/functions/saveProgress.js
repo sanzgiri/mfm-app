@@ -1,5 +1,3 @@
-const { getStore } = require('@netlify/blobs');
-
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { 
@@ -19,19 +17,12 @@ exports.handler = async (event, context) => {
     }
 
     console.log('Saving progress for userId:', userId);
-    console.log('Progress data:', JSON.stringify(progressData));
 
-    // Use Netlify Blobs for persistent storage
-    const store = getStore({
-      name: 'meditation-progress',
-      consistency: 'strong'  // Ensure strong consistency
-    });
+    // Use Netlify Blobs - simpler approach
+    const { getStore } = await import('@netlify/blobs');
+    const store = getStore('meditation-progress');
     
-    await store.set(userId, JSON.stringify(progressData), {
-      metadata: {
-        lastModified: new Date().toISOString()
-      }
-    });
+    await store.set(userId, JSON.stringify(progressData));
 
     console.log('Progress saved successfully');
 
@@ -49,7 +40,8 @@ exports.handler = async (event, context) => {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        error: error.toString(),
+        error: error.message,
+        stack: error.stack,
         message: 'Failed to save progress'
       })
     };
