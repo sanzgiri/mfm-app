@@ -1,4 +1,6 @@
-exports.handler = async (event, context) => {
+import { getStore } from '@netlify/blobs';
+
+export const handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { 
       statusCode: 405, 
@@ -16,10 +18,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Use Netlify Blobs - simpler approach
-    const { getStore } = await import('@netlify/blobs');
     const store = getStore('meditation-progress');
-    
     await store.delete(userId);
 
     return {

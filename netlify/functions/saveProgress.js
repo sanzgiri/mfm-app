@@ -1,4 +1,6 @@
-exports.handler = async (event, context) => {
+import { getStore } from '@netlify/blobs';
+
+export const handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { 
       statusCode: 405, 
@@ -18,10 +20,7 @@ exports.handler = async (event, context) => {
 
     console.log('Saving progress for userId:', userId);
 
-    // Use Netlify Blobs - simpler approach
-    const { getStore } = await import('@netlify/blobs');
     const store = getStore('meditation-progress');
-    
     await store.set(userId, JSON.stringify(progressData));
 
     console.log('Progress saved successfully');
