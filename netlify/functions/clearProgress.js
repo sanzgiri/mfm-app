@@ -18,12 +18,8 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Pass context to getStore for authentication
-    const store = getStore({
-      name: 'meditation-progress',
-      siteID: context.site?.id,
-      token: context.token
-    });
+    // For Functions, just pass the store name - context is auto-configured
+    const store = getStore('meditation-progress');
     await store.delete(userId);
 
     return {
