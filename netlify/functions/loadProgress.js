@@ -18,28 +18,47 @@ exports.handler = async (event, context) => {
       };
     }
 
+    console.log('Loading progress for userId:', userId);
+
     // Use Netlify Blobs for persistent storage
-    const store = getStore('meditation-progress');
-    const data = await store.get(userId);
+    const store = getStore({
+      name: 'meditation-progress',
+      consistency: 'strong'
+    });
+    
+    const data = await store.get(userId, { type: 'text' });
 
     if (!data) {
+      console.log('No data found for userId:', userId);
       return {
         statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
         body: JSON.stringify({ progressData: {} })
       };
     }
 
+    console.log('Data loaded successfully');
+
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
       body: JSON.stringify({ progressData: JSON.parse(data) })
     };
   } catch (error) {
     console.error('Load error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.toString() })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        error: error.toString(),
+        message: 'Failed to load progress'
+      })
     };
   }
 };

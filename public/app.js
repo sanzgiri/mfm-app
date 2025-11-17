@@ -66,14 +66,27 @@ let progressData = {
 // Load progress from server
 async function loadProgress() {
   try {
+    console.log('Loading progress for userId:', userId);
     const response = await fetch(`/.netlify/functions/loadProgress?userId=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('Loaded data:', data);
+    
     if (data.progressData && Object.keys(data.progressData).length > 0) {
       progressData = data.progressData;
-      updateUI();
+      console.log('Progress data loaded:', progressData);
+    } else {
+      console.log('No existing progress data found, starting fresh');
     }
+    
+    updateUI();
   } catch (error) {
     console.error('Error loading progress:', error);
+    showNotification('Failed to load progress', 'error');
   }
 }
 
@@ -81,15 +94,21 @@ async function loadProgress() {
 async function saveProgress() {
   try {
     progressData.lastAccessed = new Date().toISOString();
+    console.log('Saving progress for userId:', userId, 'Data:', progressData);
+    
     const response = await fetch('/.netlify/functions/saveProgress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, progressData })
     });
 
-    if (response.ok) {
-      showNotification('Progress saved ✓');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const result = await response.json();
+    console.log('Save result:', result);
+    showNotification('Progress saved ✓');
   } catch (error) {
     console.error('Error saving progress:', error);
     showNotification('Save failed', 'error');
@@ -181,11 +200,16 @@ function updateUI() {
 }
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', () => {
-  loadProgress();
-
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('App initializing with userId:', userId);
+  
+  // Load progress first
+  await loadProgress();
+  
   // Set up event listeners
   document.getElementById('clearProgress')?.addEventListener('click', clearProgress);
+  
+  console.log('App initialized, current progress:', progressData);
 });
 
 // Export functions for use in HTML
@@ -195,5 +219,6 @@ window.meditationApp = {
   loadProgress,
   saveProgress,
   clearProgress,
-  getUserId: () => userId
+  getUserId: () => userId,
+  progressData  // Export progressData so it can be accessed
 };
