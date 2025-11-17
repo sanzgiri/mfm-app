@@ -1,7 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+const { getStore } = require('@netlify/blobs');
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
   if (event.httpMethod !== 'GET') {
     return { 
       statusCode: 405, 
@@ -19,9 +18,11 @@ exports.handler = async (event) => {
       };
     }
 
-    const filePath = path.join('/tmp/user_data', `${userId}.json`);
+    // Use Netlify Blobs for persistent storage
+    const store = getStore('meditation-progress');
+    const data = await store.get(userId);
 
-    if (!fs.existsSync(filePath)) {
+    if (!data) {
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -29,14 +30,13 @@ exports.handler = async (event) => {
       };
     }
 
-    const data = fs.readFileSync(filePath, 'utf8');
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ progressData: JSON.parse(data) })
     };
   } catch (error) {
+    console.error('Load error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.toString() })

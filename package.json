@@ -1,0 +1,8 @@
+{
+  "name": "meditations-for-mortals",
+  "version": "1.0.0",
+  "description": "28-day meditation app with persistent progress tracking",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
