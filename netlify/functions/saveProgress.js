@@ -20,8 +20,12 @@ export const handler = async (event, context) => {
 
     console.log('Saving progress for userId:', userId);
 
-    // For Functions, just pass the store name - context is auto-configured
-    const store = getStore('meditation-progress');
+    // For Functions, pass store name with explicit siteID/token fallback
+    const store = getStore({
+      name: 'meditation-progress',
+      siteID: process.env.SITE_ID,
+      token: process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN
+    });
     await store.set(userId, JSON.stringify(progressData));
 
     console.log('Progress saved successfully');

@@ -18,8 +18,12 @@ export const handler = async (event, context) => {
       };
     }
 
-    // For Functions, just pass the store name - context is auto-configured
-    const store = getStore('meditation-progress');
+    // For Functions, pass store name with explicit siteID/token fallback
+    const store = getStore({
+      name: 'meditation-progress',
+      siteID: process.env.SITE_ID,
+      token: process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN
+    });
     await store.delete(userId);
 
     return {
