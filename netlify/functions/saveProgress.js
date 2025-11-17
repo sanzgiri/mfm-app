@@ -20,7 +20,12 @@ export const handler = async (event, context) => {
 
     console.log('Saving progress for userId:', userId);
 
-    const store = getStore('meditation-progress');
+    // Pass context to getStore for authentication
+    const store = getStore({
+      name: 'meditation-progress',
+      siteID: context.site?.id,
+      token: context.token
+    });
     await store.set(userId, JSON.stringify(progressData));
 
     console.log('Progress saved successfully');
