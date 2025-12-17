@@ -2,11 +2,13 @@
 
 :root {
   --color-primary: #8B7355;
-  --color-secondary: #D4C5B9;
+  --color-secondary: #E3DCD2;
   --color-bg: #FAF8F5;
-  --color-text: #2C2416;
-  --color-text-muted: #6B5D4F;
-  --color-accent: #A68B6E;
+  --color-text: #4A4A4A;
+  --color-text-bold: #1A1A1A;
+  /* Darker for bold text */
+  --color-text-muted: #8C8C8C;
+  --color-accent: #8B7355;
   --color-success: #7BA05B;
   --color-border: #E6DDD3;
   --spacing-xs: 0.5rem;
@@ -14,9 +16,13 @@
   --spacing-md: 1.5rem;
   --spacing-lg: 2rem;
   --spacing-xl: 3rem;
-  --border-radius: 8px;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --border-radius: 12px;
+  /* Softer rounded corners */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --font-heading: 'Georgia', serif;
+  --font-body: 'Proxima Nova', 'Helvetica Neue', sans-serif;
+  /* Cleaner body text */
 }
 
 * {
@@ -26,12 +32,13 @@
 }
 
 body {
-  font-family: 'Georgia', 'Garamond', serif;
-  line-height: 1.7;
+  font-family: var(--font-body);
+  line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg);
   padding: var(--spacing-lg);
-  max-width: 1200px;
+  max-width: 800px;
+  /* Reduce max width for better reading experience on desktop */
   margin: 0 auto;
 }
 
@@ -86,81 +93,100 @@ h1 {
   text-align: center;
 }
 
-/* Calendar Grid */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.week-section {
-  grid-column: 1 / -1;
-  margin-top: var(--spacing-lg);
-}
-
-.week-header {
-  font-size: 1.25rem;
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-sm);
-  font-weight: 600;
-}
-
-.week-theme {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  font-style: italic;
+/* Top Nav */
+.top-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(139, 115, 85, 0.1);
+}
+
+.separator {
+  color: var(--color-border);
+}
+
+/* Calendar Grid & Cards */
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
 }
 
 .calendar-day {
   background: white;
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
+  /* Reduced padding for compact list view */
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow);
-  border: 2px solid transparent;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .calendar-day:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateX(4px);
   border-color: var(--color-accent);
 }
 
-.calendar-day.completed {
-  background: linear-gradient(135deg, var(--color-secondary), var(--color-bg));
-  border-color: var(--color-success);
-}
-
-.calendar-day.completed::after {
-  content: '✓';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  color: var(--color-success);
-  font-weight: bold;
-}
-
 .day-number {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-xs);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  min-width: 2rem;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.day-info {
+  flex: 1;
 }
 
 .day-title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 0.25rem;
+  font-family: var(--font-heading);
 }
 
 .day-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
   font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  /* Standard property */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.check-mark {
+  color: var(--color-success);
+  font-size: 1.25rem;
+  font-weight: bold;
 }
 
 /* Detail View */
@@ -192,6 +218,40 @@ h1 {
   line-height: 1.8;
   margin-bottom: var(--spacing-lg);
   white-space: pre-wrap;
+}
+
+/* Text Content Styles */
+.text-body p {
+  margin-bottom: var(--spacing-md);
+}
+
+.section-header {
+  color: var(--color-text-bold);
+  font-weight: 700;
+  display: block;
+  /* Make headers block level? Or inline if part of sentence? */
+  margin-top: var(--spacing-md);
+  /* Add top margin for separation */
+}
+
+/* If the header is inline (e.g. Core Insight: ...), remove display:block if easier */
+/* But user asked for "section headers", usually implies block. */
+/* Process_content puts them inline in text. */
+/* Let's try inline-block or just color change first. */
+strong,
+b {
+  color: var(--color-text-bold);
+}
+
+.content-list {
+  padding-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  list-style-type: disc;
+}
+
+.content-list li {
+  margin-bottom: var(--spacing-xs);
+  padding-left: var(--spacing-xs);
 }
 
 .reflections {
@@ -308,25 +368,154 @@ button {
 }
 
 /* Responsive */
+/* Navigation & Footer */
+/* App Footer */
+.app-footer {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  text-align: center;
+  border-top: 1px solid var(--color-border);
+}
+
+.app-footer a {
+  display: inline-block;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin: 0 var(--spacing-sm);
+  font-size: 1.1rem;
+  /* Bigger font */
+  font-weight: 500;
+  transition: color 0.2s;
+  padding: var(--spacing-xs);
+}
+
+.app-footer a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Dynamic JS Elements */
+.intro-summary {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  font-size: 1.1rem;
+}
+
+.btn-text,
+.btn-text-small {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  display: block;
+  margin: 0 auto var(--spacing-lg);
+}
+
+.btn-text-small {
+  font-size: 0.875rem;
+  margin: var(--spacing-sm) 0;
+}
+
+.day-info {
+  margin-top: var(--spacing-xs);
+}
+
+/* Detail View Refinements */
+.detail-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  border-radius: 0;
+  /* Full screen */
+  display: none;
+  /* JS handles toggle */
+}
+
+.back-btn {
+  position: fixed;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+  z-index: 1001;
+}
+
+.detail-content {
+  max-width: 800px;
+  margin: 40px auto 0;
+  /* Space for back button */
+  padding-bottom: 80px;
+  /* Space for footer */
+}
+
+.interaction-area {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.navigation-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--spacing-xl);
+}
+
+.nav-btn {
+  background: var(--color-bg);
+  padding: 10px 20px;
+  border-radius: 20px;
+  color: var(--color-text-muted);
+}
+
+.nav-btn:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.completed-state {
+  background-color: var(--color-success) !important;
+  color: white !important;
+}
+
+/* Typography for Long Text */
+.text-body p,
+.meditation-content p {
+  margin-bottom: 1.5em;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.meditation-content strong {
+  display: block;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--color-primary);
+}
+
 @media (max-width: 768px) {
-  body {
-    padding: var(--spacing-sm);
-  }
-
-  h1 {
-    font-size: 2rem;
-  }
-
-  .calendar-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: var(--spacing-sm);
-  }
-
   .detail-view {
     padding: var(--spacing-md);
   }
 
-  .meditation-text {
-    font-size: 1rem;
+  .back-btn {
+    top: 10px;
+    left: 10px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
   }
 }

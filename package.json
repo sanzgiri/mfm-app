@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "28-day meditation app with persistent progress tracking",
   "type": "module",
+  "scripts": {
+    "build": "node process_content.js > public/data.js"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.0.0"
   }

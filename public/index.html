@@ -1,176 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meditations for Mortals - Four Week Journey</title>
   <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#8B7355">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
+
 <body>
-  <header>
-    <h1>Meditations for Mortals</h1>
-    <p class="subtitle">Four Weeks to Embrace Your Limitations</p>
-  </header>
+  <div id="main-view">
+    <header>
+      <h1>Meditations for Mortals</h1>
+      <p class="subtitle">Four Weeks to Embrace Your Limitations</p>
+    </header>
 
-  <div class="progress-container">
-    <div class="progress-bar">
-      <div class="progress-fill"></div>
+    <div class="top-nav">
+      <button id="btn-intro" class="nav-link">Introduction</button>
+      <span class="separator">•</span>
+      <button id="btn-howto" class="nav-link">How to Use</button>
     </div>
-    <p class="progress-text">0 of 28 days completed</p>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+      </div>
+      <p id="progress-text" class="progress-text">0 of 28 days completed</p>
+    </div>
+
+    <div id="app-content">
+      <!-- Dynamic Content (Intro, Weeks, Days) goes here -->
+    </div>
+
+    <footer class="app-footer">
+      <a href="#" id="link-about">About</a> •
+      <a href="#" id="link-references">References</a> •
+      <a href="#" id="link-conclusion">Conclusion</a>
+    </footer>
   </div>
 
-  <div id="calendarView">
-    <div class="calendar-grid">
-      <!-- Week 1 -->
-      <div class="week-section">
-        <h2 class="week-header">Week 1: Being Finite</h2>
-        <p class="week-theme">Facing the fact of our finitude</p>
-      </div>
-
-      <div class="calendar-day" data-day="1" onclick="showDay(1)">
-        <div class="day-number">1</div>
-        <div class="day-title">It's Worse Than You Think</div>
-        <div class="day-subtitle">On the Liberation of Defeat</div>
-      </div>
-
-      <div class="calendar-day" data-day="2" onclick="showDay(2)">
-        <div class="day-number">2</div>
-        <div class="day-title">Kayaks and Superyachts</div>
-        <div class="day-subtitle">On Actually Doing Things</div>
-      </div>
-
-      <div class="calendar-day" data-day="3" onclick="showDay(3)">
-        <div class="day-number">3</div>
-        <div class="day-title">You Need Only Face the Consequences</div>
-        <div class="day-subtitle">On Paying the Price</div>
-      </div>
-
-      <div class="calendar-day" data-day="4" onclick="showDay(4)">
-        <div class="day-number">4</div>
-        <div class="day-title">Playing in the Ruins</div>
-        <div class="day-subtitle">On Not Needing to Rebuild Everything</div>
-      </div>
-
-      <div class="calendar-day" data-day="5" onclick="showDay(5)">
-        <div class="day-number">5</div>
-        <div class="day-title">The Productivity Debt</div>
-        <div class="day-subtitle">On Getting Out of the Hole</div>
-      </div>
-
-      <div class="calendar-day" data-day="6" onclick="showDay(6)">
-        <div class="day-number">6</div>
-        <div class="day-title">Just Do the Thing Once</div>
-        <div class="day-subtitle">On Becoming Who You Are</div>
-      </div>
-
-      <div class="calendar-day" data-day="7" onclick="showDay(7)">
-        <div class="day-number">7</div>
-        <div class="day-title">Let the Future Be the Future</div>
-        <div class="day-subtitle">On Crossing Bridges When You Come to Them</div>
-      </div>
-
-      <!-- Weeks 2-4 would follow the same pattern -->
-      <!-- Add remaining 21 days here in production -->
+  <!-- Detail View (Overlay) -->
+  <div id="detail-view" class="detail-view" style="display: none;">
+    <button id="back-btn" class="back-btn">← Back</button>
+    <div id="detail-content" class="detail-content">
+      <!-- Dynamic Detail Content -->
     </div>
   </div>
 
-  <div id="detailView" class="detail-view">
-    <div id="dayContent"></div>
-
-    <div class="button-group">
-      <button class="btn-secondary" onclick="showCalendar()">← Back to Calendar</button>
-      <button class="btn-primary" id="completeBtn" onclick="toggleDayComplete()">Mark Complete</button>
-    </div>
-    
-    <div class="button-group" style="margin-top: 20px; justify-content: center;">
-      <button class="btn-secondary" onclick="meditationApp.exportProgress()">📥 Export Progress</button>
-      <button class="btn-secondary" onclick="meditationApp.importProgress()">📤 Import Progress</button>
-      <button class="btn-danger" onclick="meditationApp.clearProgress()">🗑️ Clear All Data</button>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-  <script>
-    let currentDayNum = 1;
-
-    function showDay(dayNum) {
-      currentDayNum = dayNum;
-      const calendarView = document.getElementById('calendarView');
-      const detailView = document.getElementById('detailView');
-      const dayContent = document.getElementById('dayContent');
-
-      // Example data for Day 1 (you would load from meditationData in app.js)
-      const dayData = {
-        1: {
-          title: "It's Worse Than You Think",
-          subtitle: "On the Liberation of Defeat",
-          keyPhrase: "When you stop trying to win an unwinnable game, you become free to play a different game.",
-          meditation: `The first step toward freedom is accepting a fundamental truth: you will never get on top of everything. Not in six months, not in a year, not ever. There is no finish line. This isn't pessimism—it's realism.
-
-Productivity culture has sold us a lie: that with the right system, enough discipline, and proper time management, we could someday achieve a state of perfect control where all tasks are completed and we can finally relax. That state does not exist.
-
-Once you accept that the game itself is unwinnable, you can stop playing by those rules. You can stop measuring your worth by an impossible metric. You can start asking the real question: Given that I have limited time and can only do a fraction of what's available to do, what actually matters?
-
-This is the liberation of defeat—not the defeat of accomplishment, but the defeat of the illusion that perfect control is possible.`,
-          reflections: [
-            "What would change if you truly accepted that you'll never get on top of everything?",
-            "How might the 'liberation of defeat' free you to act differently today?",
-            "What are you postponing until you've 'dealt with everything'?"
-          ]
-        }
-      };
-
-      const day = dayData[dayNum] || dayData[1];
-
-      dayContent.innerHTML = `
-        <h2>Day ${dayNum}: ${day.title}</h2>
-        <p class="day-subtitle">${day.subtitle}</p>
-        <div class="key-phrase">${day.keyPhrase}</div>
-        <div class="meditation-text">${day.meditation}</div>
-
-        <div class="reflections">
-          <h3>Reflection Questions</h3>
-          ${day.reflections.map(q => `<div class="reflection-question">${q}</div>`).join('')}
-        </div>
-
-        <div class="notes-section">
-          <h3>Personal Notes</h3>
-          <textarea 
-            id="notesArea" 
-            placeholder="Write your reflections here..."
-            onchange="saveCurrentNotes()"
-          ></textarea>
-        </div>
-      `;
-
-      // Load existing notes
-      const savedNotes = window.meditationApp.progressData?.notes?.[dayNum] || '';
-      document.getElementById('notesArea').value = savedNotes;
-
-      calendarView.style.display = 'none';
-      detailView.classList.add('active');
-    }
-
-    function showCalendar() {
-      const calendarView = document.getElementById('calendarView');
-      const detailView = document.getElementById('detailView');
-
-      calendarView.style.display = 'block';
-      detailView.classList.remove('active');
-    }
-
-    function toggleDayComplete() {
-      window.meditationApp.toggleComplete(currentDayNum);
-      const btn = document.getElementById('completeBtn');
-      btn.textContent = window.meditationApp.progressData?.completed?.[currentDayNum] 
-        ? 'Mark Incomplete' 
-        : 'Mark Complete';
-    }
-
-    function saveCurrentNotes() {
-      const notes = document.getElementById('notesArea').value;
-      window.meditationApp.saveNotes(currentDayNum, notes);
-    }
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
+
 </html>

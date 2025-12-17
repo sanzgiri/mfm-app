@@ -1,273 +1,363 @@
-// Meditations for Mortals - Main App Logic
+import { meditationData } from './data.js';
 
-// UUID generation for userId
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
+// State
+const state = {
+  progress: {
+    completed: {}, // dayNum -> timestamp
+    notes: {},      // dayNum -> string
+    lastActiveDay: 1
+  },
+  userId: null
+};
 
-// Get or create userId
+// --- Storage & API ---
+
 function getUserId() {
-  let userId = localStorage.getItem('meditationsUserId');
-  if (!userId) {
-    userId = generateUUID();
-    localStorage.setItem('meditationsUserId', userId);
+  let id = localStorage.getItem('mfm_user_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('mfm_user_id', id);
   }
-  return userId;
+  return id;
 }
 
-const userId = getUserId();
-
-// Meditation data structure (Days 1-28)
-const meditationData = {
-  weeks: [
-    {
-      number: 1,
-      theme: "Being Finite (Facing the fact of our finitude)",
-      days: [
-        {
-          day: 1,
-          title: "It's Worse Than You Think",
-          subtitle: "On the Liberation of Defeat",
-          keyPhrase: "When you stop trying to win an unwinnable game, you become free to play a different game.",
-          meditation: `The first step toward freedom is accepting a fundamental truth: you will never get on top of everything. Not in six months, not in a year, not ever. There is no finish line. This isn't pessimism—it's realism.
-
-Productivity culture has sold us a lie: that with the right system, enough discipline, and proper time management, we could someday achieve a state of perfect control where all tasks are completed and we can finally relax. That state does not exist.
-
-Once you accept that the game itself is unwinnable, you can stop playing by those rules. You can stop measuring your worth by an impossible metric. You can start asking the real question: Given that I have limited time and can only do a fraction of what's available to do, what actually matters?
-
-This is the liberation of defeat—not the defeat of accomplishment, but the defeat of the illusion that perfect control is possible. When you stop trying to win an unwinnable game, you become free to play a different game entirely.`,
-          reflections: [
-            "What would change if you truly accepted that you'll never get on top of everything?",
-            "How might the 'liberation of defeat' free you to act differently today?",
-            "What are you postponing until you've 'dealt with everything'?",
-            "Who told you that perfect control was possible?",
-            "If you accepted that you can only do a fraction of what's available, what would you choose?"
-          ]
-        }
-        // Additional days would follow the same structure...
-      ]
-    }
-    // Additional weeks...
-  ]
-};
-
-// State management
-let currentDay = 1;
-let progressData = {
-  completed: {},
-  notes: {},
-  lastAccessed: null
-};
-
-// Load progress from server
 async function loadProgress() {
-  try {
-    console.log('Loading progress from server for userId:', userId);
-    const response = await fetch(`/.netlify/functions/loadProgress?userId=${userId}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server response error:', response.status, errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('Server data loaded:', data);
-    
-    if (data.progressData && Object.keys(data.progressData).length > 0) {
-      progressData = data.progressData;
-      console.log('Progress data set:', progressData);
-    } else {
-      console.log('No existing progress data found');
-    }
-    
-    updateUI();
-  } catch (error) {
-    console.error('Error loading progress:', error);
-    showNotification('Failed to load progress - check console', 'error');
-  }
-}
+  state.userId = getUserId();
 
-// Save progress to server
-async function saveProgress() {
-  try {
-    progressData.lastAccessed = new Date().toISOString();
-    console.log('Saving progress to server for userId:', userId, 'Data:', progressData);
-    
-    const response = await fetch('/.netlify/functions/saveProgress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, progressData })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server response error:', response.status, errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    console.log('Save successful:', result);
-    showNotification('Progress saved ✓');
-  } catch (error) {
-    console.error('Error saving progress:', error);
-    showNotification('Save failed - check console', 'error');
-  }
-}
-
-// Clear all progress
-async function clearProgress() {
-  if (!confirm('Are you sure you want to clear all your progress and notes?')) {
-    return;
-  }
-
-  try {
-    await fetch('/.netlify/functions/clearProgress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId })
-    });
-
-    progressData = { completed: {}, notes: {}, lastAccessed: null };
-    updateUI();
-    showNotification('Progress cleared');
-  } catch (error) {
-    console.error('Error clearing progress:', error);
-    showNotification('Clear failed', 'error');
-  }
-}
-
-// Export progress data as JSON file
-function exportProgress() {
-  const dataStr = JSON.stringify(progressData, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `meditations-backup-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  showNotification('Progress exported');
-}
-
-// Import progress data from JSON file
-function importProgress() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json';
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
+  // Try local storage first for speed
+  const local = localStorage.getItem('mfm_progress');
+  if (local) {
     try {
-      const text = await file.text();
-      const imported = JSON.parse(text);
-      
-      if (confirm('This will overwrite your current progress. Continue?')) {
-        progressData = imported;
-        saveProgress();
-        updateUI();
-        showNotification('Progress imported');
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      showNotification('Import failed', 'error');
+      state.progress = { ...state.progress, ...JSON.parse(local) };
+      updateUI(); // Immediate render
+    } catch (e) {
+      console.error("Local storage parse error", e);
     }
-  };
-  input.click();
+  }
+
+  // Then fetch from server to sync (if Netlify functions exist)
+  try {
+    const res = await fetch(`/.netlify/functions/loadProgress?userId=${state.userId}`);
+    if (res.ok) {
+      const remoteData = await res.json();
+      if (remoteData && Object.keys(remoteData).length > 0) {
+        state.progress = { ...state.progress, ...remoteData };
+        localStorage.setItem('mfm_progress', JSON.stringify(state.progress));
+        updateUI();
+      }
+    }
+  } catch (e) {
+    console.warn("Server sync failed, running locally", e);
+  }
 }
 
-// Mark day as complete/incomplete
-function toggleComplete(day) {
-  progressData.completed[day] = !progressData.completed[day];
-  saveProgress();
-  updateUI();
+async function saveProgress() {
+  localStorage.setItem('mfm_progress', JSON.stringify(state.progress));
+
+  // Sync to server
+  try {
+    fetch('/.netlify/functions/saveProgress', {
+      method: 'POST',
+      body: JSON.stringify({ userId: state.userId, data: state.progress })
+    });
+  } catch (e) {
+    console.warn("Server save failed", e);
+  }
 }
 
-// Save notes for a day
-function saveNotes(day, notes) {
-  progressData.notes[day] = notes;
-  saveProgress();
+// --- UI Rendering ---
+
+function renderApp() {
+  const container = document.getElementById('app-content');
+  container.innerHTML = '';
+
+  // 1. Introduction Snippet (Collapsible or just a header?)
+  // Let's make the main view the "Map" of the journey
+
+  // 1. Introduction Snippet
+  const introParams = document.createElement('div');
+  introParams.className = 'intro-summary';
+  introParams.innerHTML = `<p>A 28-day journey to embrace your limitations.</p>`;
+  container.appendChild(introParams);
+
+  // 2. Weeks
+  meditationData.weeks.forEach(week => {
+    const weekSection = document.createElement('div');
+    weekSection.className = 'week-section';
+
+    const weekHeader = document.createElement('h2');
+    weekHeader.className = 'week-header';
+    weekHeader.innerText = week.title; // "Week 1", etc.
+    // We might want accurate titles "Week 1: Embracing Reality"
+    // The parser put "Week 1" as title but often the text has "WEEK 1: EMBRACING REALITY"
+
+    // Let's see if we can extract a better title from the first day's fullText or intro?
+    // Actually, let's just use what we have, or maybe the intro text has the title.
+    // The parser extracted "Week 1". Let's stick with that for now, or improve parser later.
+
+    weekSection.appendChild(weekHeader);
+
+    // If there is a week intro, maybe a button to read it?
+    if (week.intro) {
+      const wIntroBtn = document.createElement('button');
+      wIntroBtn.className = 'btn-text-small';
+      wIntroBtn.innerText = "Read Week Intro";
+      wIntroBtn.onclick = () => showTextPage(week.title, week.intro);
+      weekSection.appendChild(wIntroBtn);
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+
+    week.days.forEach(day => {
+      const card = document.createElement('div');
+      card.className = 'calendar-day';
+      card.dataset.day = day.day;
+
+      // Check status
+      const isCompleted = !!state.progress.completed[day.day];
+      if (isCompleted) card.classList.add('completed');
+
+      // Locked logic? Maybe unlock all for now, or strictly sequential?
+      // User requested "Populate Content", didn't specify strict locking.
+      // Let's leave unlocked for easy testing.
+
+      card.innerHTML = `
+                <div class="day-number">${day.day}</div>
+                <div class="day-info">
+                    <div class="day-title">${day.title}</div>
+                    ${day.subtitle ? `<div class="day-subtitle">${day.subtitle}</div>` : ''}
+                </div>
+                ${isCompleted ? '<span class="check-mark">✓</span>' : ''}
+            `;
+
+      card.onclick = () => openDay(day);
+      grid.appendChild(card);
+    });
+
+    weekSection.appendChild(grid);
+    container.appendChild(weekSection);
+  });
 }
 
-// Get completion percentage
-function getCompletionPercentage() {
-  const completed = Object.values(progressData.completed).filter(Boolean).length;
-  return Math.round((completed / 28) * 100);
-}
-
-// Show notification
-function showNotification(message, type = 'success') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 10);
-
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => notification.remove(), 300);
-  }, 2000);
-}
-
-// Update UI with current progress
 function updateUI() {
-  // Update calendar view
-  const calendarDays = document.querySelectorAll('.calendar-day');
-  calendarDays.forEach(dayEl => {
-    const day = parseInt(dayEl.dataset.day);
-    if (progressData.completed[day]) {
-      dayEl.classList.add('completed');
+  // Update progress bars and checkmarks without full re-render
+  const completedCount = Object.keys(state.progress.completed).length;
+  const totalDays = 28; // Hardcoded or dynamic
+  const percent = Math.min(100, Math.round((completedCount / totalDays) * 100));
+
+  document.getElementById('progress-fill').style.width = `${percent}%`;
+  document.getElementById('progress-text').innerText = `${completedCount} of ${totalDays} days completed`;
+
+  // Update day cards
+  document.querySelectorAll('.calendar-day').forEach(card => {
+    const d = card.dataset.day;
+    if (state.progress.completed[d]) {
+      card.classList.add('completed');
+      if (!card.querySelector('.check-mark')) {
+        card.innerHTML += '<span class="check-mark">✓</span>';
+      }
     } else {
-      dayEl.classList.remove('completed');
+      card.classList.remove('completed');
+      const check = card.querySelector('.check-mark');
+      if (check) check.remove();
+    }
+  });
+}
+
+// --- Detail View Logic ---
+
+function showView(viewId) {
+  document.getElementById('main-view').style.display = viewId === 'main-view' ? 'block' : 'none';
+  document.getElementById('detail-view').style.display = viewId === 'detail-view' ? 'block' : 'none';
+  if (viewId === 'main-view') {
+    window.scrollTo(0, 0); // Reset scroll
+    updateUI();
+  }
+}
+
+function formatText(text) {
+  if (!text) return '';
+
+  // 1. Convert * Bullet points
+  // Split by newline
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      return;
+    }
+
+    if (trimmed.startsWith('*')) {
+      if (!inList) {
+        html += '<ul class="content-list">';
+        inList = true;
+      }
+      html += `<li>${trimmed.substring(1).trim()}</li>`;
+    } else {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+
+      // 2. Bold specific "Headers" (lines ending in colon or specific keywords)
+      // e.g. "Core Insight:", "Today's Objective:", "Reflection Questions:"
+      // Also apply paragraph tags
+      const boldPrefixes = [
+        "Core Insight:", "Today's Objective:", "Today's Task:",
+        "Real-World Example:", "Netflix Example:", "Movie Example:",
+        "Reflection Questions:", "Notes Space:", "Weekly Integration Questions:"
+      ];
+
+      let processedLine = trimmed;
+
+      // Check if line starts with any bold prefix
+      for (const prefix of boldPrefixes) {
+        if (processedLine.startsWith(prefix)) {
+          // Wrap the prefix in strong
+          // Or if the whole line is just the prefix?
+          // The text usually follows: "Core Insight: Life..."
+          // Let's bold the prefix part only? or the whole line if it's a header?
+          // User said "bold section headers". 
+          // Usually in this text "Core Insight:" is the header for the paragraph.
+          const parts = processedLine.split(prefix);
+          processedLine = `<strong class="section-header">${prefix}</strong>` + parts.slice(1).join(prefix);
+          break;
+        }
+      }
+
+      html += `<p>${processedLine}</p>`;
     }
   });
 
-  // Update progress bar
-  const progressBar = document.querySelector('.progress-fill');
-  if (progressBar) {
-    progressBar.style.width = `${getCompletionPercentage()}%`;
+  if (inList) {
+    html += '</ul>';
   }
 
-  // Update progress text
-  const progressText = document.querySelector('.progress-text');
-  if (progressText) {
-    const completed = Object.values(progressData.completed).filter(Boolean).length;
-    progressText.textContent = `${completed} of 28 days completed`;
-  }
+  return html;
 }
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('App initializing with userId:', userId);
-  
-  // Load progress first
-  await loadProgress();
-  
-  // Set up event listeners
-  document.getElementById('clearProgress')?.addEventListener('click', clearProgress);
-  
-  console.log('App initialized, current progress:', progressData);
-});
+function showTextPage(title, text) {
+  const content = document.getElementById('detail-content');
+  // Simple regex to make formatted text look decent (newlines to paragraphs)
+  const formattedText = formatText(text);
 
-// Export functions for use in HTML
-window.meditationApp = {
-  toggleComplete,
-  saveNotes,
-  loadProgress,
-  saveProgress,
-  clearProgress,
-  exportProgress,
-  importProgress,
-  getUserId: () => userId,
-  progressData  // Export progressData so it can be accessed
-};
+  content.innerHTML = `
+        <div class="text-page">
+            <h2>${title}</h2>
+            <div class="text-body">${formattedText}</div>
+        </div>
+    `;
+  showView('detail-view');
+}
+
+function openDay(dayData) {
+  const content = document.getElementById('detail-content');
+  const isCompleted = !!state.progress.completed[dayData.day];
+  const userNotes = state.progress.notes[dayData.day] || '';
+
+  // Parse Full Text significantly better
+  // The fullText contains headers like "Core Insight:", "Today's Task:", etc.
+  // We can just format newline -> p for now, maybe bolding "Header:" patterns.
+
+  let htmlContent = dayData.fullText
+    .replace(/(Core Insight:|Today's Objective:|Today's Task:|Reflection Questions:|Matrix Example:|Netflix Example:|Movie Example:|Example:|Real-World Example:)/g, '<strong>$1</strong>')
+    .split('\n').map(l => l.trim() ? `<p>${l}</p>` : '').join('');
+
+  content.innerHTML = `
+        <div class="day-detail">
+            <h2>Day ${dayData.day}: ${dayData.title}</h2>
+            
+            <div class="meditation-content">
+                ${htmlContent}
+            </div>
+            
+            <div class="interaction-area">
+                <div class="notes-section">
+                    <h3>Your Notes</h3>
+                    <textarea id="note-input" placeholder="Reflect on today's practice...">${userNotes}</textarea>
+                </div>
+                
+                <button id="complete-btn" class="btn-primary ${isCompleted ? 'completed-state' : ''}">
+                    ${isCompleted ? 'Completed ✓' : 'Mark as Complete'}
+                </button>
+            </div>
+            
+            <div class="navigation-footer">
+                ${dayData.day > 1 ? `<button id="prev-btn" class="nav-btn">← Day ${dayData.day - 1}</button>` : '<div></div>'}
+                ${dayData.day < 28 ? `<button id="next-btn" class="nav-btn">Day ${dayData.day + 1} →</button>` : '<div></div>'}
+            </div>
+        </div>
+    `;
+
+  // Bind Events
+  document.getElementById('complete-btn').onclick = () => toggleComplete(dayData.day);
+
+  const noteInput = document.getElementById('note-input');
+  noteInput.oninput = () => {
+    state.progress.notes[dayData.day] = noteInput.value;
+    saveProgress();
+  };
+
+  const prevBtn = document.getElementById('prev-btn');
+  if (prevBtn) prevBtn.onclick = () => {
+    // Find prev day data
+    // Need flat list or lookup
+    // Doing simple look up by finding day in appropriate week
+    const prevDayNum = dayData.day - 1;
+    const prevWeek = meditationData.weeks[Math.ceil(prevDayNum / 7) - 1];
+    const prevDay = prevWeek?.days.find(d => d.day === prevDayNum);
+    if (prevDay) openDay(prevDay);
+  };
+
+  const nextBtn = document.getElementById('next-btn');
+  if (nextBtn) nextBtn.onclick = () => {
+    const nextDayNum = dayData.day + 1;
+    const nextWeek = meditationData.weeks[Math.ceil(nextDayNum / 7) - 1];
+    const nextDay = nextWeek?.days.find(d => d.day === nextDayNum);
+    if (nextDay) openDay(nextDay);
+  };
+
+  showView('detail-view');
+  window.scrollTo(0, 0);
+}
+
+function toggleComplete(dayNum) {
+  if (state.progress.completed[dayNum]) {
+    delete state.progress.completed[dayNum];
+  } else {
+    state.progress.completed[dayNum] = Date.now();
+  }
+  saveProgress();
+
+  // Update button state immediately
+  const btn = document.getElementById('complete-btn');
+  const isCompleted = !!state.progress.completed[dayNum];
+  btn.textContent = isCompleted ? 'Completed ✓' : 'Mark as Complete';
+  btn.classList.toggle('completed-state', isCompleted);
+}
+
+
+// --- Initialization ---
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Navigation Links
+  document.getElementById('btn-intro').onclick = () => showTextPage("Introduction", meditationData.introduction);
+  document.getElementById('btn-howto').onclick = () => showTextPage("How to Use", meditationData.howToUse);
+
+  document.getElementById('link-about').onclick = (e) => { e.preventDefault(); showTextPage("About", meditationData.about); };
+  document.getElementById('link-references').onclick = (e) => { e.preventDefault(); showTextPage("References", meditationData.references); };
+  document.getElementById('link-conclusion').onclick = (e) => { e.preventDefault(); showTextPage("Conclusion", meditationData.conclusion); };
+
+  document.getElementById('back-btn').onclick = () => showView('main-view');
+
+  renderApp();
+  await loadProgress();
+});
