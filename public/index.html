@@ -28,11 +28,20 @@
       <div class="progress-bar">
         <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
       </div>
-      <p id="progress-text" class="progress-text">0 of 28 days completed</p>
+      <p id="progress-text" class="progress-text">0 days completed</p>
+      <p id="streak-text" class="streak-text"></p>
+      <button id="resume-btn" type="button" class="btn-primary resume-btn" style="display:none"></button>
     </div>
 
     <div id="app-content">
       <!-- Dynamic Content (Intro, Weeks, Days) goes here -->
+    </div>
+
+    <div class="data-controls">
+      <button id="btn-export" type="button" class="btn-text-small">Export notes</button>
+      <button id="btn-import" type="button" class="btn-text-small">Import backup</button>
+      <button id="btn-reset" type="button" class="btn-text-small btn-text-danger">Reset progress</button>
+      <input id="import-input" type="file" accept="application/json,.json" hidden>
     </div>
 
     <footer class="app-footer">
@@ -43,8 +52,8 @@
   </div>
 
   <!-- Detail View (Overlay) -->
-  <div id="detail-view" class="detail-view" style="display: none;">
-    <button id="back-btn" class="back-btn">← Back</button>
+  <div id="detail-view" class="detail-view" style="display: none;" aria-hidden="true">
+    <button id="back-btn" type="button" class="back-btn">← Back</button>
     <div id="detail-content" class="detail-content">
       <!-- Dynamic Detail Content -->
     </div>

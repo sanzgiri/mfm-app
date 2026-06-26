@@ -9,7 +9,7 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const { userId } = JSON.parse(event.body);
+    const { userId } = JSON.parse(event.body || '{}');
 
     if (!userId) {
       return { 

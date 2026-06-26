@@ -135,7 +135,9 @@ function parseDay(page, dayNum) {
         return true;
     });
 
-    // Extract "Example" section specifically for merging
+    // Extract "Example" section specifically for merging.
+    // Falls back to end-of-page if no following marker is found, so content
+    // is never silently dropped when the source format varies slightly.
     const rwMatch = page.match(/(Real-World Example|Netflix Example|Movie Example):/);
 
     let exampleSection = '';
@@ -143,10 +145,9 @@ function parseDay(page, dayNum) {
         const start = page.indexOf(rwMatch[0]);
         let end = page.indexOf('Reflection Questions:');
         if (end === -1) end = page.indexOf('Notes Space:');
+        if (end === -1 || end <= start) end = page.length; // fallback: to end
 
-        if (end > start) {
-            exampleSection = page.substring(start, end).trim();
-        }
+        exampleSection = page.substring(start, end).trim();
     }
 
     return {

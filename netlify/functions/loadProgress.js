@@ -55,9 +55,7 @@ export const handler = async (event, context) => {
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
+      body: JSON.stringify({
         message: 'Failed to load progress'
       })
     };

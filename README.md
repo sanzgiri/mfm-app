@@ -1,14 +1,17 @@
 # Meditations for Mortals - Netlify App
 
-A four-week meditation journey based on Oliver Burkeman's "Meditations for Mortals" with persistent progress tracking across devices.
+A 30-day meditation journey based on Oliver Burkeman's "Meditations for Mortals" with persistent progress tracking across devices.
 
 ## Features
 
-- 28 daily meditations (4 weeks)
-- Expanded meditation content with reflection questions
-- Personal notes for each day
-- Progress tracking (mark days complete)
-- Cross-device sync via Netlify Functions
+- 30 daily meditations (5 weeks)
+- Expanded meditation content with reflection questions and film examples
+- Personal notes for each day (auto-saved, debounced)
+- Progress tracking (mark days complete) with longest-streak counter
+- "Resume where you left off" and an end-of-journey celebration
+- Export your notes (Markdown) and a full backup (JSON); import to restore
+- Offline support via a service worker (installable PWA)
+- Cross-device sync via Netlify Functions + Netlify Blobs
 - No external database required
 
 ## Project Structure
@@ -17,14 +20,18 @@ A four-week meditation journey based on Oliver Burkeman's "Meditations for Morta
 meditations-mortals/
 ├── public/
 │   ├── index.html       # Main app interface
-│   ├── app.js          # Frontend logic
-│   └── style.css       # Styling
+│   ├── app.js           # Frontend logic
+│   ├── data.js          # Generated meditation content (npm run build)
+│   ├── sw.js            # Service worker (offline support)
+│   ├── manifest.json    # PWA manifest
+│   └── style.css        # Styling
 ├── netlify/
 │   └── functions/
-│       ├── saveProgress.js   # Save user progress
-│       ├── loadProgress.js   # Load user progress
-│       └── clearProgress.js  # Clear user data
-└── netlify.toml        # Netlify configuration
+│       ├── saveProgress.js   # Save user progress (Netlify Blobs)
+│       ├── loadProgress.js   # Load user progress (Netlify Blobs)
+│       └── clearProgress.js  # Clear user data (Netlify Blobs)
+├── process_content.js   # Parses doc1.txt/doc2.txt -> public/data.js
+└── netlify.toml         # Netlify configuration
 ```
 
 ## Deploy to Netlify
@@ -48,15 +55,17 @@ meditations-mortals/
 
 - **Frontend**: Static HTML/CSS/JS served from `public/` folder
 - **Backend**: Netlify Functions (serverless) handle data persistence
-- **Storage**: User data stored as JSON files in `/tmp` (ephemeral but persists across function warm runs)
+- **Storage**: User data is stored in **Netlify Blobs** (a managed, persistent key/value store), keyed by an anonymous user ID. Data survives function cold starts and redeploys.
 - **User ID**: Automatically generated UUID stored in browser localStorage
+- **Offline**: A service worker caches the app shell and content, so the app works without a connection. Progress made offline syncs on reconnect.
 
 ## Data Persistence Note
 
-This app uses Netlify Functions with `/tmp` storage, which:
-- Works great for personal use and small groups
-- Data persists as long as the Lambda function stays "warm" (typically hours to days)
-- For production apps with many users, consider upgrading to a database (FaunaDB, Supabase, etc.)
+This app uses **Netlify Blobs** for storage, which persists user data reliably across function invocations and deploys. Notes and progress are also cached in `localStorage` for instant load and offline use.
+
+Note: the Blobs store requires the `SITE_ID` and a Netlify token to be available to the functions in some environments (see the `getStore(...)` calls). On Netlify these are typically injected automatically; for local `netlify dev` you may need to set `SITE_ID` and `NETLIFY_AUTH_TOKEN`.
+
+Because a user is identified by a UUID in their browser, clearing browser storage will orphan that account. Use **Export notes** in the app to keep a backup, and **Import backup** to restore.
 
 ## Local Development
 
@@ -77,9 +86,10 @@ To test locally:
 
 ## Customization
 
-- Edit meditation content in `app.js` (meditationData object)
+- Edit source content in `doc1.txt` / `doc2.txt`, then run `npm run build` to regenerate `public/data.js`
 - Customize styles in `style.css`
 - Modify functions in `netlify/functions/` for different storage backends
+- When you change cached assets, bump `CACHE_VERSION` in `public/sw.js`
 
 ## License
 

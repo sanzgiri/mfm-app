@@ -9,12 +9,19 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const { userId, progressData } = JSON.parse(event.body);
+    const { userId, progressData } = JSON.parse(event.body || '{}');
 
     if (!userId) {
       return { 
         statusCode: 400, 
         body: JSON.stringify({ error: 'userId required' })
+      };
+    }
+
+    if (typeof progressData === 'undefined') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'progressData required' })
       };
     }
 
@@ -43,9 +50,7 @@ export const handler = async (event, context) => {
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
+      body: JSON.stringify({
         message: 'Failed to save progress'
       })
     };
