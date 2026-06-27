@@ -78,7 +78,7 @@ To test locally:
 ## Usage
 
 1. Visit your deployed site
-2. Browse the 4-week calendar
+2. Browse the 30-day calendar (5 weeks)
 3. Click any day to read the meditation
 4. Write personal reflections in the notes area
 5. Mark days as complete
